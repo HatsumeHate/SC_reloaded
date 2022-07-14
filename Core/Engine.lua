@@ -73,7 +73,7 @@ do
         end)
 
 
-        local yyyyyy
+        local yyyyyyyyyyyyy
         local trg = CreateTrigger()
 
             TriggerRegisterAnyUnitEventBJ(trg, EVENT_PLAYER_UNIT_DAMAGED)
