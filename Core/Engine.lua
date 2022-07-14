@@ -73,6 +73,7 @@ do
         end)
 
 
+        sadfsad
         local trg = CreateTrigger()
 
             TriggerRegisterAnyUnitEventBJ(trg, EVENT_PLAYER_UNIT_DAMAGED)
