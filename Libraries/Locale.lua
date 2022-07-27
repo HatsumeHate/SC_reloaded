@@ -22,7 +22,9 @@ do
             if my_locale ~= "ruRU" and my_locale ~= "enUS" then my_locale = "enUS" end
         end
 
-        LOCALE_LIST = {}
+        LOCALE_LIST = {
+            pidor = "a"
+        }
 
     end
 

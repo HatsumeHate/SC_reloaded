@@ -774,7 +774,7 @@ do
 
 
         m.time = 0.
---print("a000")
+
 
 
             if (target and not m.full_distance) then
@@ -979,15 +979,16 @@ do
                     --TRACKING
                     if m.trackable then
                         --print("TRACKABLE")
-                        if GetUnitState(m.target, UNIT_STATE_LIFE) < 0.045 or m.target == nil then
+                        if m.target == nil then
                             m.time = 0.
                         else
-                            distance = GetDistance3D(m.current_x, m.current_y, m.current_z, GetUnitX(m.target), GetUnitY(m.target), m.end_z + GetUnitZ(m.target))
+                            local tx, ty, tz = GetUnitX(m.target) + (m.offset_track_x or 0.), GetUnitY(m.target) + (m.offset_track_y or 0.), m.end_z + GetUnitZ(m.target) + (m.offset_track_z or 0.)
+                            distance = GetDistance3D(m.current_x, m.current_y, m.current_z, tx, ty, tz)
                             velocity = (m.speed * PERIOD) / distance
-                            m.vx = (GetUnitX(m.target) - m.current_x) * velocity
-                            m.vy = (GetUnitY(m.target) - m.current_y) * velocity
-                            m.vz = (m.end_z + GetUnitZ(m.target) - m.current_z) * velocity
-                            m.heading_angle = AngleBetweenXY_DEG(m.current_x, m.current_y, GetUnitX(m.target), GetUnitY(m.target))
+                            m.vx = (tx - m.current_x) * velocity
+                            m.vy = (ty - m.current_y) * velocity
+                            m.vz = (tz - m.current_z) * velocity
+                            m.heading_angle = AngleBetweenXY_DEG(m.current_x, m.current_y, tx, ty)
                             BlzSetSpecialEffectOrientation(missile_effect, m.heading_angle * bj_DEGTORAD, 0., 0.)
                         end
                     end
@@ -1071,7 +1072,7 @@ do
                 end
                 -- movement end
 
-                --print("a")
+                --print("damage")
                 -- DAMAGE
                 if m.only_on_impact then
                     if impact then
@@ -1124,7 +1125,7 @@ do
                     --print("why")
                     if m.only_on_target then
                         -- seeking
-                        if IsUnitInRangeXY(m.target, m.current_x, m.current_y, m.radius) then
+                        if ((m.offset_track_x or m.offset_track_y or m.offset_track_z) and DistanceBetweenXY(m.current_x, m.current_y, GetUnitX(m.target) + (m.offset_track_x or 0.), GetUnitY(m.target) + (m.offset_track_y or 0.)) <= m.radius) or IsUnitInRangeXY(m.target, m.current_x, m.current_y, m.radius) then
 
                             --print("hit")
                             DestroyMissile(m.target, missile_effect, m, m.current_x, m.current_y)

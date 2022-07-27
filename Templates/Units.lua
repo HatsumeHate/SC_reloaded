@@ -56,7 +56,9 @@ do
     function NewUnitByTemplate(source, reference_data)
         local data  = MergeTables({}, reference_data)
 
-
+            data.Owner = source
+            data.action_timer = CreateTimer()
+            UnitsList[GetHandleId(source)] = data
 
         return data
     end
@@ -87,10 +89,6 @@ do
                             OnUnitCreated(GetEnumUnit())
                         end
 
-                        if GetUnitTypeId(GetEnumUnit()) == FourCC("n00N") then
-                            OnUnitCreated(GetEnumUnit())
-                        end
-
                 end)
 
         DestroyGroup(group)
@@ -107,19 +105,285 @@ do
         UnitsList       = { }
 
 
+
+        NewUnitTemplate("trsv", {
+            name = GetLocalString("К.С.М.", "S.C.V."),
+            death_sound = { pack = { "Sound\\SCV\\tscdth00.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
         NewUnitTemplate("trmr", {
             name = GetLocalString("Морпех", "Marine"),
             weapon = {
-                damage = 5,
-                damage_type = DAMAGE_TYPE_STANDARD,
-                fire_sound = { pack = { "Sound\\Marine\\tmafir00.wav" }, volume = 115, cutoff = 1700. }
+                {
+                    damage = 6,
+                    damage_type = DAMAGE_TYPE_STANDARD,
+                    --impact_sound = { pack = { "Sound\\Marine\\tmafir00.wav" }, volume = 115, cutoff = 1700. }
+                },
             },
-            death_sound = { pack = { "Sound\\Marine\\tmadth00.wav", "Sound\\Marine\\tmadth01.wav" }, volume = 115, cutoff = 1700. }
+            death_sound = { pack = { "Sound\\Marine\\tmadth00.wav", "Sound\\Marine\\tmadth01.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
         })
 
 
+        NewUnitTemplate("trfb", {
+            name = GetLocalString("Огнеметчик", "Firebat"),
+            weapon = {
+                {
+                    damage = 8,
+                    damage_type = DAMAGE_TYPE_CONCUSSIVE,
+                    custom_attack = true
+                },
+            },
+            fire_sound = { pack = { "Sound\\Firebat\\tfbfir00.wav", "Sound\\Firebat\\tfbfir01.wav" }, volume = 120, cutoff = 1900., distance = 3500. },
+            death_sound = { pack = { "Sound\\Firebat\\tfbdth00.wav", "Sound\\Firebat\\tfbdth01.wav", "Sound\\Firebat\\tfbdth02.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
 
 
+        NewUnitTemplate("trgh", {
+            name = GetLocalString("Призрак", "Ghost"),
+            weapon = {
+                {
+                    damage = 10,
+                    damage_type = DAMAGE_TYPE_CONCUSSIVE,
+                },
+            },
+            death_sound = { pack = { "Sound\\Ghost\\tghdth00.wav", "Sound\\Ghost\\tghdth01.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trmd", {
+            name = GetLocalString("Медик", "Medic"),
+            death_sound = { pack = { "Sound\\Medic\\TMdDth00.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trvl", {
+            name = GetLocalString("Стервятник", "Vulture"),
+            weapon = {
+                {
+                    damage = 20,
+                    damage_type = DAMAGE_TYPE_CONCUSSIVE,
+                    impact_sound = { pack = { "Sound\\Vulture\\tvuhit00.wav", "Sound\\Vulture\\tvuhit01.wav", "Sound\\Vulture\\tvuhit02.wav"  }, volume = 110, cutoff = 1700. }
+                },
+            },
+            death_sound = { pack = { "Sound\\Vulture\\tvudth00.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trgf", {
+            name = GetLocalString("Голиаф", "Goliath"),
+            weapon = {
+                {
+                    damage = 12,
+                    damage_type = DAMAGE_TYPE_STANDARD,
+                    --impact_sound = { pack = { "Sound\\Vulture\\tvuhit00.wav", "Sound\\Vulture\\tvuhit01.wav", "Sound\\Vulture\\tvuhit02.wav"  }, volume = 110, cutoff = 1700. }
+                },
+                {
+                    damage = 10,
+                    damage_type = DAMAGE_TYPE_EXPLOSIVE,
+                    amount = 2,
+                    impact_sound = { pack = { "Sound\\Misc\\explo2.wav" }, volume = 95, cutoff = 1700. }
+                },
+            },
+            death_sound = { pack = { "Sound\\Goliath\\tgodth00.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+
+        NewUnitTemplate("trst", {
+            name = GetLocalString("Осадный Танк", "Siege Tank"),
+            weapon = {
+                {
+                    damage = 30,
+                    damage_type = DAMAGE_TYPE_EXPLOSIVE,
+                },
+                {
+                    damage = 70,
+                    damage_type = DAMAGE_TYPE_EXPLOSIVE,
+                    inner_range = 23.475,
+                    medium_range = 58.575,
+                    outer_range = 93.75,
+                    target_types = { UNIT_TYPE_GROUND },
+                    target_friendly = true,
+                    impact_sound = { pack = { "Sound\\Misc\\explolrg.wav" }, volume = 95, cutoff = 1700. },
+                    impact_effect = { path = "Effect\\siege mode impact.mdx", random_angle = true }
+                },
+            },
+            death_sound = { pack = { "Sound\\SiegeTank\\ttadth00.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trwr", {
+            name = GetLocalString("Мираж", "Wraith"),
+            weapon = {
+                {
+                    damage = 8,
+                    damage_type = DAMAGE_TYPE_EXPLOSIVE,
+                },
+                {
+                    damage = 20,
+                    damage_type = DAMAGE_TYPE_EXPLOSIVE,
+                    impact_sound = { pack = { "Sound\\Misc\\explosm.wav" }, volume = 95, cutoff = 1700. }
+                },
+            },
+            death_sound = { pack = { "Sound\\Wraith\\tphdth00.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trds", {
+            name = GetLocalString("Десантный Корабль", "Dropship"),
+            death_sound = { pack = { "Sound\\Dropship\\tdrdth00.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trss", {
+            name = GetLocalString("Научное Судно", "Science Vessel"),
+            death_sound = { pack = { "Sound\\ScienceVessel\\tvedth00.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trvc", {
+            name = GetLocalString("Валькирья", "Valkyrie"),
+            weapon = {
+                {
+                    damage = 6,
+                    damage_type = DAMAGE_TYPE_EXPLOSIVE,
+                    custom_attack = true,
+                    --impact_sound = { pack = { "Sound\\Valkyrie\\Tfrhit.wav" }, volume = 110, cutoff = 1700. }
+                },
+            },
+            death_sound = { pack = { "Sound\\Valkyrie\\TVkDth00.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trbc", {
+            name = GetLocalString("Крейсер", "Battlecruiser"),
+            weapon = {
+                {
+                    damage = 25,
+                    damage_type = DAMAGE_TYPE_STANDARD,
+                },
+            },
+            missile_eject_range = 85.,
+            missile_eject_z = -15.,
+            death_sound = { pack = { "Sound\\Battlecruiser\\tbadth00.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+
+        NewUnitTemplate("trs1", {
+            name = GetLocalString("Паучья Мина", "Spider Mine"),
+            weapon = {
+                {
+                    damage = 125,
+                    damage_type = DAMAGE_TYPE_EXPLOSIVE,
+                    custom_attack = true
+                },
+            },
+            death_sound = { pack = { "Sound\\Misc\\explo1.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trcc", {
+            name = GetLocalString("Командный Центр", "Command Center"),
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            alternate_model = FourCC("h001"),
+            liftoff_animation = 1,
+            land_animation = 3,
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trbr", {
+            name = GetLocalString("Бараки", "Barracks"),
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            alternate_model = FourCC("trbr"),
+            liftoff_animation = 3,
+            land_animation = 4,
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("treb", {
+            name = GetLocalString("Инженерный Комплекс", "Engineering Bay"),
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            alternate_model = FourCC("h002"),
+            liftoff_animation = 1,
+            land_animation = 3,
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trsp", {
+            name = GetLocalString("Космопорт", "Starport"),
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            alternate_model = FourCC("h003"),
+            liftoff_animation = 1,
+            land_animation = 3,
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trfc", {
+            name = GetLocalString("Завод", "Factory"),
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            alternate_model = FourCC("h004"),
+            liftoff_animation = 1,
+            land_animation = 3,
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trmt", {
+            name = GetLocalString("Ракетная турель", "Missile Turret"),
+            weapon = {
+                {
+                    damage = 20,
+                    damage_type = DAMAGE_TYPE_EXPLOSIVE
+                },
+            },
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trsf", {
+            name = GetLocalString("Научный Комплекс", "Science Facility"),
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            alternate_model = FourCC("h005"),
+            liftoff_animation = 1,
+            land_animation = 3,
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trsd", {
+            name = GetLocalString("Хранилище", "Supply Depot"),
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trsd", {
+            name = GetLocalString("Хранилище", "Supply Depot"),
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trrf", {
+            name = GetLocalString("Перерабатывающий Завод", "Refinery"),
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("tram", {
+            name = GetLocalString("Оружейная", "Armory"),
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+        NewUnitTemplate("trbn", {
+            name = GetLocalString("Бункер", "Bunker"),
+            death_sound = { pack = { "Sound\\Misc\\explo4.wav" }, volume = 110, cutoff = 1700. },
+            time_before_remove = 10.
+        })
+
+
+        --BlzSetAbilityStringField(ab, ABILITY_SF_ICON_ACTIVATED)
         local trg = CreateTrigger()
         TriggerRegisterEnterRectSimple(trg, bj_mapInitialPlayableArea)
         TriggerAddAction(trg, function ()
@@ -156,7 +420,7 @@ do
 
                             local timer = CreateTimer()
                             TimerStart(timer, unit_data.time_before_remove, false, function()
-                                --DestroyTimer(unit_data.action_timer)
+                                DestroyTimer(unit_data.action_timer)
                                 --DestroyTimer(unit_data.attack_timer)
                                 UnitsList[handle] = nil
                                 DestroyTimer(timer)
@@ -170,6 +434,31 @@ do
 
         end)
 
+        InitUnitsDataOnMap()
+
+        Cheat("greedisgood")
+        Cheat("warpten")
+
+        local building_trigger = CreateTrigger()
+        TriggerRegisterAnyUnitEventBJ(building_trigger, EVENT_PLAYER_UNIT_CONSTRUCT_FINISH)
+        TriggerAddAction(building_trigger, function()
+            if GetUnitTypeId(GetTriggerUnit()) == FourCC("trbn") then
+                BunkerBuilt(GetTriggerUnit())
+            end
+        end)
+
+
+        local load_trigger = CreateTrigger()
+
+            TriggerRegisterAnyUnitEventBJ(load_trigger, EVENT_PLAYER_UNIT_LOADED)
+            --TriggerRegisterUnitEvent(load_trigger, unit, EVENT_UNIT_LOADED)
+            TriggerAddAction(load_trigger, function()
+                local cargo_type = GetUnitTypeId(GetTransportUnit())
+
+                    if cargo_type == FourCC("trbn") then
+                        BunkerLoadUnit(GetTransportUnit(), GetTriggerUnit())
+                    end
+            end)
 
     end
 

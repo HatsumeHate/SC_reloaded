@@ -7,17 +7,19 @@ do
 
 
 
-    local function ConfigureSound(sound, volume, cutoff)
+    local function ConfigureSound(sound, volume, cutoff, distance)
         SetSoundChannel(sound, 5)
         SetSoundVolume(sound, volume or 128)
         SetSoundPitch(sound, GetRandomReal(0.97, 1.03))
-        SetSoundDistances(sound, 600., 10000.)
-        SetSoundDistanceCutoff(sound, 99999999999999999.)
-        local timer = CreateTimer()
-        TimerStart(timer, 0.000, false, function()
-            SetSoundDistanceCutoff(sound, cutoff or 2100.)
-            DestroyTimer(GetExpiredTimer())
-        end)
+        SetSoundDistances(sound, 600., distance or 10000.)
+        SetSoundDistanceCutoff(sound, cutoff or 2100.)
+        --SetSoundDistanceCutoff(sound, 99999999999999999.)
+        --local timer = CreateTimer()
+        --TimerStart(timer, 0.000, false, function()
+          --  SetSoundDistanceCutoff(sound, cutoff or 2100.)
+          --  print(cutoff)
+           -- DestroyTimer(GetExpiredTimer())
+       -- end)
         SetSoundConeAngles(sound, 0.0, 0.0, 127)
         SetSoundConeOrientation(sound, 0.0, 0.0, 0.0)
     end
@@ -29,10 +31,10 @@ do
     ---@param z real
     ---@param volume integer
     ---@param cutoff real
-    function CreateNew3DSound(name, x, y, z, volume, cutoff, loop)
+    function CreateNew3DSound(name, x, y, z, volume, cutoff, distance, loop)
         local snd = CreateSound(name, loop or false, true, false, 100, 100, "CombatSoundsEAX")
 
-            ConfigureSound(snd, volume, cutoff)
+            ConfigureSound(snd, volume, cutoff, distance)
             SetSoundPosition(snd, x, y, z)
 
         return snd
@@ -131,7 +133,7 @@ do
     ---@param fadeout_offset integer
     ---@param delay real
     ---@param target unit
-    function AddLoopingSoundOnUnit(soundpack, target, fadein_offset, fadeout_offset, delay, volume, cutoff)
+    function AddLoopingSoundOnUnit(soundpack, target, fadein_offset, fadeout_offset, delay, volume, cutoff, distance)
         soundpack.loop_timer = CreateTimer()
 
         soundpack.volume_max = volume
@@ -187,7 +189,7 @@ do
     ---@param fadein_offset integer
     ---@param fadeout_offset integer
     ---@param delay real
-    function AddLoopingSound(soundpack, x, y, z, fadein_offset, fadeout_offset, delay, volume, cutoff)
+    function AddLoopingSound(soundpack, x, y, z, fadein_offset, fadeout_offset, delay, volume, cutoff, distance)
         soundpack.loop_timer = CreateTimer()
 
         soundpack.volume_max = volume
@@ -251,10 +253,10 @@ do
     ---@param y real
     ---@param vol integer
     ---@param cutoff real
-    function AddSoundVolume(s, x, y, vol, cutoff)
+    function AddSoundVolume(s, x, y, vol, cutoff, distance)
         local snd = CreateSound(s, false, true, true, 10, 10, "CombatSoundsEAX")
 
-            ConfigureSound(snd, vol or 128, cutoff or 2100.)
+            ConfigureSound(snd, vol or 128, cutoff or 2100., distance)
             SetSoundPosition(snd, x, y, 35.)
             StartSound(snd)
             KillSoundWhenDone(snd)
@@ -271,7 +273,7 @@ do
     function AddSoundVolumeZ(s, x, y, z, vol, cutoff)
         local snd = CreateSound(s, false, true, true, 10, 10, "CombatSoundsEAX") --CombatSoundsEAX
 
-            ConfigureSound(snd, vol or 128, cutoff or 2100.)
+            ConfigureSound(snd, vol or 128, cutoff or 2100., distance)
             SetSoundPosition(snd, x, y, z)
             StartSound(snd)
             KillSoundWhenDone(snd)
@@ -286,13 +288,13 @@ do
     ---@param vol integer
     ---@param cutoff real
     ---@param player integer
-    function AddSoundForPlayerVolumeZ(s, x, y, z, vol, cutoff, player)
+    function AddSoundForPlayerVolumeZ(s, x, y, z, vol, cutoff, distance, player)
         local snd = CreateSound(s, false, true, true, 10, 10, "CombatSoundsEAX") --CombatSoundsEAX
 
             SetSoundChannel(snd, 5)
             if GetLocalPlayer() == Player(player) then SetSoundVolume(snd, vol or 128) else SetSoundVolume(snd, 0) end
             SetSoundPitch(snd, 1)
-            SetSoundDistances(snd, 600., 10000.)
+            SetSoundDistances(snd, 600., distance or 10000.)
             SetSoundDistanceCutoff(snd, cutoff or 2100.)
             SetSoundConeAngles(snd, 0.0, 0.0, 127)
             SetSoundConeOrientation(snd, 0.0, 0.0, 0.0)

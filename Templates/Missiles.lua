@@ -101,6 +101,74 @@ do
 
     function DefineMissilesData()
         MissileList = {}
+
+
+        --Missile\Terran\Flare.mdx
+
+        --==============================================--
+        NewMissileTemplate('optical_flare_missile', {
+            name = "flare missile",
+            model = "Missile\\Terran\\Flare.mdx",
+            speed = 1250.,
+            start_z = 40.,
+            end_z = 40.,
+            scale = 1.,
+            trackable = true,
+            ignore_terrain = true,
+            only_on_target = true
+        })
+        --==============================================--
+        NewMissileTemplate('lockdown_missile', {
+            name = "lockdown missile",
+            model = "Missile\\Terran\\missile.mdx",
+            speed = 1250.,
+            start_z = 40.,
+            end_z = 40.,
+            scale = 1.,
+            trackable = true,
+            ignore_terrain = true,
+            only_on_target = true
+        })
+
+        --==============================================--
+        NewMissileTemplate('emp_missile', {
+            name = "emp missile",
+            model = "Missile\\Terran\\emp nova.mdx",
+            speed = 1250.,
+            start_z = 180.,
+            end_z = 0.,
+            scale = 1.,
+            trackable = false,
+            only_on_impact = true
+        })
+
+        --==============================================--
+        NewMissileTemplate('yamato_missile', {
+            name = "yamato missile",
+            model = "Missile\\Firebolt Classic.mdx",
+            speed = 1500.,
+            start_z = 0.,
+            end_z = 40.,
+            scale = 1.,
+            trackable = true,
+            ignore_terrain = true,
+            only_on_target = true
+        })
+
+        --==============================================--
+        NewMissileTemplate('valkyrie_missile', {
+            name = "valkyrie missile",
+            model = "Missile\\Terran\\valkyrie rockets2.mdx",
+            speed = 1250.,
+            start_z = 200.,
+            end_z = 40.,
+            scale = 1.,
+            trackable = true,
+            ignore_terrain = true,
+            only_on_target = true
+        })
+
+        --[[
         NewMissileTemplate('M001', {
             name = "test missile",
             model = ".mdx",
@@ -1166,7 +1234,7 @@ do
             only_on_impact = true,
             ignore_terrain = false,
             can_enum = false
-        })
+        })]]
     end
 
 end

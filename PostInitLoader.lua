@@ -16,7 +16,7 @@ do
         GetUnitY = GetUnitRealY
 
         local func_id = 0
-        local init_que = { InitLocaleLibrary, UnitDataInit, MainEngineInit }
+        local init_que = { UtilsInit, InitLocaleLibrary, UnitDataInit, DefineMissilesData, InitMovementEngine, MainEngineInit, CommonFunctionsData }
 
             for i = 1, #init_que do
                 init_que[i]()

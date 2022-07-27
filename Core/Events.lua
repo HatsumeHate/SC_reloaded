@@ -10,9 +10,16 @@ do
 
     function OnUnitCreated(new_unit)
         local unit_data = GetUnitData(new_unit)
+        local unit_type = GetUnitTypeId(new_unit)
 
-
-
+            if unit_type == FourCC("trgh") then
+                RegisterGhostCloak(new_unit)
+            elseif unit_type == FourCC("trst") then
+                RegisterSiegeModeEffect(new_unit)
+            elseif unit_type == FourCC("trwr") then
+                RegisterWraithCloak(new_unit)
+            end
+            
     end
 
 
@@ -64,20 +71,30 @@ do
     ---@param source unit
     ---@param missile table
     function OnMissileImpact(source, missile)
-
+        if missile.id == "emp_missile" then
+            EMPEffect(missile.current_x, missile.current_y)
+        end
     end
 
     ---@param source unit
     ---@param target unit
     ---@param missile table
     function OnMissileExpire(source, target, missile)
-
+        if missile.id == "valkyrie_missile" then
+            ValkyrieBarrageDamage(source, missile.current_x, missile.current_y)
+        end
     end
 
     ---@param source unit
     ---@param target unit
     ---@param missile table
     function OnMissileHit(source, target, missile)
+
+        if missile.id == "optical_flare_missile" then OpticalFlareEffect(target)
+        elseif missile.id == "lockdown_missile" then LockdownEffect(target)
+        elseif missile.id == "yamato_missile" then
+            DamageUnit(source, target, 260, DAMAGE_TYPE_EXPLOSIVE)
+        end
 
     end
 
@@ -109,9 +126,26 @@ do
 
 
     function OnDamageStart(source, target, damage_data)
+        local victim = GetUnitData(target)
 
 
-        return damage_data
+            if victim.matrix_absorb_amount and victim.matrix_absorb_amount > 0 then
+
+                victim.matrix_absorb_amount = victim.matrix_absorb_amount - damage_data.damage
+                damage_data.damage_type = 0
+                damage_data.defence = 0
+                damage_data.damage = 0.5
+
+                    if victim.matrix_absorb_amount <= 0 then
+                        victim.matrix_absorb_amount = 0
+                        DestroyTimer(victim.matrix_timer)
+                        UnitRemoveAbility(target, FourCC("A00P"))
+                        SetCloakState(target, true)
+                        victim.matrix_timer = nil
+                    end
+
+            end
+
     end
 
 
@@ -126,6 +160,12 @@ do
     ---@param source unit
     ---@param target unit
     function OnMyAttack(source, target, attack_data)
+        local id = GetUnitTypeId(source)
+
+            if id == FourCC("trfb") then FirebatAttack(source, target)
+            elseif id == FourCC("trs1") then SpiderMineDamage(source)
+            elseif id == FourCC("trvc") then ValkyrieBarrageEffect(source, target)
+            end
 
         return attack_data
     end
@@ -167,6 +207,33 @@ do
     ---@param y real
     function OnSkillCastEnd(source, target, x, y, skill, ability_level)
 
+
+        if skill == FourCC("A005") then StimpackEffect(source)
+        elseif skill == FourCC("A008") then
+            AddSoundVolume("Sound\\Medic\\TMedflsh.wav", GetUnitX(source), GetUnitY(source), 100, 1900., 4000.)
+            local m = ThrowMissile(source, target, "optical_flare_missile", nil, GetUnitX(source), GetUnitY(source), 0., 0., 0.)
+            m.time = 99999.
+        elseif skill == FourCC("A009") then
+            AddSoundVolume("Sound\\Medic\\Tmedrest1.wav", GetUnitX(source), GetUnitY(source), 100, 1900., 4000.)
+            RestorationEffect(target)
+        elseif skill == FourCC("A00D") then
+            --AddSoundVolume("Sound\\Medic\\TMedflsh.wav", GetUnitX(source), GetUnitY(source), 100, 1900., 4000.)
+            local m = ThrowMissile(source, target, "lockdown_missile", nil, GetUnitX(source), GetUnitY(source), 0., 0., 0.)
+            m.time = 99999.
+        elseif skill == FourCC("A00I") then
+            SpiderMineDeploy(source, x, y)
+        elseif skill == FourCC("A00M") then
+            IrradiateEffect(source, target)
+        elseif skill == FourCC("A00O") then
+            DefensiveMatrixEffect(target)
+        elseif skill == FourCC("A00Q") then
+            ThrowMissile(source, nil, "emp_missile", nil, GetUnitX(source), GetUnitY(source), x, y, 0.)
+        elseif skill == FourCC("A00R") then
+            YamatoChargeEffect(source, target)
+        elseif skill == FourCC("A00U") then
+
+        end
+
     end
 
 
@@ -190,6 +257,125 @@ do
 
     end
 
+
+    function OnOrderIssued(source, issued_order, x, y, target)
+
+        print(OrderId2String(issued_order))
+
+        if issued_order == order_unroot then
+            local unit_data = GetUnitData(source)
+
+                if unit_data.alternate_model then
+                    local timer = CreateTimer()
+                    local height = 200.
+                    local current_height = 0
+                    local height_delta = height / (1.167 / 0.025)
+
+                        --UnitMakeAbilityPermanent(source, true, FourCC("A00U"))
+                        BlzSetUnitSkin(source, unit_data.alternate_model)
+                        SetUnitAnimationByIndex(source, unit_data.liftoff_animation)
+                        AddSoundVolume("Sound\\Misc\\liftoff.wav", GetUnitX(source), GetUnitY(source), 100, 1900., 4000.)
+
+                        TimerStart(timer, 0.025, true, function()
+                            if GetUnitState(source, UNIT_STATE_LIFE) < 0.045 or current_height >= height then
+                                DestroyTimer(timer)
+                                SetUnitFlyHeight(source, 200., 0.)
+                            else
+                                current_height = current_height + height_delta
+                                SetUnitFlyHeight(source, current_height, 0.)
+                            end
+                        end)
+                end
+
+        elseif issued_order == order_root then
+            local unit_data = GetUnitData(source)
+
+            if unit_data.alternate_model then
+                if not unit_data.landing and not unit_data.land_x then
+                    local timer = CreateTimer()
+
+                    IssuePointOrderById(source, order_move, x, y)
+                    unit_data.land_x = x
+                    unit_data.land_y = y
+
+                    local intercept_index = RegisterOrderInterception(source, function(order, ix, iy, targetord)
+                        if not unit_data.landing then
+                            if order == order_stop or order == order_smart or order == order_move or order == order_patrol or order == order_holdposition then
+                                DestroyTimer(timer)
+                                unit_data.land_x = nil
+                                unit_data.land_y = nil
+                                --print("interrupted")
+                                return true
+                            elseif order == order_root then
+                                unit_data.land_x = ix
+                                unit_data.land_y = iy
+                                --print("redirected")
+                            end
+                        end
+                    end, nil)
+
+                    TimerStart(timer, 0.025, true, function()
+                        --print(DistanceBetweenUnitXY(source, x, y))
+                        if DistanceBetweenUnitXY(source, unit_data.land_x, unit_data.land_y) < 32. then
+                            SetUnitX(source, unit_data.land_x)
+                            SetUnitY(source, unit_data.land_y)
+                            local current_height = 200.
+                            local height_delta = 200 / (1.167 / 0.025)
+
+                                --print("start landing")
+                                SetUnitFacing(source, 270.)
+                                unit_data.landing = true
+                                SetUnitAnimationByIndex(source, unit_data.land_animation)
+                                AddSoundVolume("Sound\\Misc\\land.wav", GetUnitX(source), GetUnitY(source), 100, 1900., 4000.)
+                                SafePauseUnit(source, true)
+                                RemoveOrderInterception(intercept_index)
+
+                                TimerStart(timer, 0.025, true, function()
+                                    if GetUnitState(source, UNIT_STATE_LIFE) < 0.045 or current_height <= 0. then
+                                        --print("cast landing")
+                                        BlzSetUnitSkin(source, GetUnitTypeId(source))
+                                        SetUnitFlyHeight(source, 0., 0.)
+                                        SafePauseUnit(source, false)
+                                        IssuePointOrderById(source, order_root, unit_data.land_x, unit_data.land_y)
+
+                                        TimerStart(timer, 0.025, true, function()
+                                            if ConvertDefenseType(BlzGetUnitIntegerField(source, UNIT_IF_DEFENSE_TYPE)) ~= DEFENSE_TYPE_HERO or GetUnitState(source, UNIT_STATE_LIFE) < 0.045 then
+                                                unit_data.landing = false
+                                                unit_data.land_x = nil
+                                                unit_data.land_y = nil
+                                                DestroyTimer(timer)
+                                                --print("land!")
+                                            end
+                                        end)
+
+                                    else
+                                        current_height = current_height - height_delta
+                                        SetUnitFlyHeight(source, current_height, 0.)
+                                    end
+                                end)
+                        end
+                    end)
+                end
+            end
+
+        elseif GetUnitTypeId(source) == FourCC("trbn") then
+
+            if issued_order == order_unload then if target then BunkerRemoveUnit(source, target) end
+            elseif issued_order == order_unloadall then BunkerRemoveAllUnits(source)
+            elseif issued_order == order_attack and target then BunkerAttackOrder(source, target)
+            elseif issued_order == order_stop then BunkerStopOrder(source)
+            elseif issued_order == order_berserk then BunkerStimpackOrder(source)
+            end
+
+        else
+            if IsUnitType(source, UNIT_TYPE_STRUCTURE) and (issued_order == order_move or issued_order == order_stop or issued_order == order_smart or issued_order == order_patrol or issued_order == order_holdposition) then
+                local unit_data = GetUnitData(source)
+
+                if unit_data.landing then IssuePointOrderById(source, order_root, GetUnitX(source), GetUnitY(source)) end
+
+            end
+        end
+    end
 
 
 end

@@ -8,7 +8,7 @@ do
 
     DAMAGE_TYPE_STANDARD = 1
     DAMAGE_TYPE_EXPLOSIVE = 2
-    DAMAGE_TYPE_CONCUSSION = 3
+    DAMAGE_TYPE_CONCUSSIVE = 3
 
     OrderInterceptionTrigger = 0
 
@@ -22,39 +22,66 @@ do
         local attacker = GetUnitData(source)
         local victim = GetUnitData(target)
         local damage = amount
+        local defence = BlzGetUnitArmor(target)
+        local defence_type = ConvertDefenseType(BlzGetUnitIntegerField(target, UNIT_IF_DEFENSE_TYPE))
 
             if attacker == nil then print("Warning: " .. GetUnitName(source) .. " doesn't have unit data.") end
             if victim == nil then print("Warning: " .. GetUnitName(target) .. " doesn't have unit data.") end
 
             if target == nil then return 0 end
+            if GetUnitState(target, UNIT_STATE_LIFE) <= 0.045 then return end
 
-            if GetUnitState(target, UNIT_STATE_LIFE) <= 0.045 then
-                return
-            end
+            local damage_table = { damage = damage, damage_type = damage_type or nil, defence = defence }
 
-            local damage_table = { damage = damage, damage_type = damage_type or nil }
+            OnDamageStart(source, target, damage_table)
 
-            damage_table = OnDamageStart(source, target, damage_table)
+            damage = damage_table.damage
+            damage_type = damage_table.damage_type
+            defence = damage_table.defence
 
+                if damage_type == DAMAGE_TYPE_CONCUSSIVE then
+                    if defence_type == DEFENSE_TYPE_MEDIUM then damage = damage / 2
+                    elseif defence_type == DEFENSE_TYPE_LARGE then damage = damage / 4 end
+                    math.floor(damage + 0.5)
+                elseif damage_type == DAMAGE_TYPE_EXPLOSIVE then
+                    if defence_type == DEFENSE_TYPE_LIGHT then damage = damage / 2
+                    elseif defence_type == DEFENSE_TYPE_MEDIUM then damage = damage * 0.75 end
+                    math.floor(damage + 0.5)
+                end
+
+
+            damage = damage - defence
             damage_table.damage = damage
-            damage_table.damage_type = damage_type
+
+            print(damage)
 
                 if damage < 1 then damage = 1 end
 
-                    damage_table.damage = damage
-                    OnDamage_PreHit(source, target, damage, damage_table)
-                    damage = damage_table.damage
+            damage_table.damage = damage
+            OnDamage_PreHit(source, target, damage, damage_table)
+            damage = damage_table.damage
 
-                    if damage > 0  then
-                        UnitDamageTarget(source, target, damage, true, false, ATTACK_TYPE_NORMAL, nil, nil)
-                        OnDamage_End(source, target, damage, damage_table)
-                    end
-
+            if damage > 0  then
+                UnitDamageTarget(source, target, damage, true, false, ATTACK_TYPE_NORMAL, nil, nil)
+                OnDamage_End(source, target, damage, damage_table)
+            end
 
 
         return damage
     end
 
+
+    function ValidateTargetTypes(target_types, target)
+        local amount = 0
+
+            for i = 1, #target_types do
+                if IsUnitType(target, target_types[i]) then
+                    amount = amount + 1
+                end
+            end
+
+        return amount == #target_types
+    end
 
 
     function MainEngineInit()
@@ -66,26 +93,85 @@ do
         TriggerAddAction(attack_trigger, function()
             local unit_data = GetUnitData(GetAttacker())
 
-                if unit_data and unit_data.weapon and unit_data.weapon.fire_sound then
-                    AddSoundVolume(unit_data.weapon.fire_sound.pack[GetRandomInt(1, #unit_data.weapon.fire_sound.pack)], GetUnitX(unit_data.Owner), GetUnitY(unit_data.Owner), unit_data.weapon.fire_sound.volume or 125, unit_data.weapon.fire_sound.cutoff or 2000.)
+                if unit_data.fire_sound then
+                    AddSoundVolume(unit_data.fire_sound.pack[GetRandomInt(1, #unit_data.fire_sound.pack)], GetUnitX(unit_data.Owner), GetUnitY(unit_data.Owner), unit_data.fire_sound.volume or 125, unit_data.fire_sound.cutoff or 2000., unit_data.fire_sound.distance)
                 end
 
         end)
-        
+
         local trg = CreateTrigger()
 
             TriggerRegisterAnyUnitEventBJ(trg, EVENT_PLAYER_UNIT_DAMAGED)
             TriggerAddAction(trg, function()
 
-                if BlzGetEventAttackType() == ATTACK_TYPE_MELEE and GetEventDamage() > 0. and GetUnitData(GetEventDamageSource()) then
+                if (BlzGetEventAttackType() == ATTACK_TYPE_MELEE or BlzGetEventAttackType() == ATTACK_TYPE_PIERCE) and GetEventDamage() > 0. and GetUnitData(GetEventDamageSource()) then
+                    local target = GetTriggerUnit()
                     local data = GetUnitData(GetEventDamageSource())
+                    local weapon = BlzGetEventAttackType() == ATTACK_TYPE_MELEE and data.weapon[1] or data.weapon[2]
 
-                        DamageUnit(data.Owner, GetTriggerUnit(), data.weapon.damage, data.weapon.damage_type)
+                        OnMyAttack(GetEventDamageSource(), target)
+
+                        if not weapon.custom_attack then
+                            if weapon.amount then
+                                for i = 1, weapon.amount do DamageUnit(data.Owner, target, weapon.damage, weapon.damage_type) end
+                            elseif weapon.inner_range then
+                                local group = CreateGroup()
+                                local x, y = GetUnitX(target), GetUnitY(target)
+                                local player = GetOwningPlayer(data.Owner)
+
+                                    GroupEnumUnitsInRange(group, x, y, weapon.outer_range, nil)
+                                    for index = BlzGroupGetSize(group) - 1, 0, -1 do
+                                        local picked = BlzGroupUnitAt(group, index)
+
+                                            if GetUnitState(picked, UNIT_STATE_LIFE) > 0.045 and (IsUnitEnemy(picked, player) or weapon.target_friendly) and ValidateTargetTypes(weapon.target_types, picked) then
+                                                if IsUnitInRangeXY(picked, x, y, weapon.inner_range) then
+                                                    DamageUnit(data.Owner, picked, weapon.damage, weapon.damage_type)
+                                                elseif IsUnitInRangeXY(picked, x, y, weapon.medium_range) then
+                                                    DamageUnit(data.Owner, picked, weapon.damage / 2., weapon.damage_type)
+                                                else
+                                                    DamageUnit(data.Owner, picked, weapon.damage / 4, weapon.damage_type)
+                                                end
+                                            end
+                                    end
+
+                            else
+                                DamageUnit(data.Owner, target, weapon.damage, weapon.damage_type)
+                            end
+
+                            if weapon.impact_effect then
+                                local effect = AddSpecialEffect(weapon.impact_effect.path, GetUnitX(target), GetUnitY(target))
+
+                                if weapon.impact_effect.random_angle then BlzSetSpecialEffectYaw(effect, GetRandomReal(0., 359.) * bj_DEGTORAD) end
+
+                                if weapon.impact_effect.lifetime then DelayAction(weapon.impact_effect.lifetime, function() DestroyEffect(effect) end)
+                                else DestroyEffect(effect) end
+
+                            end
+
+                            if weapon.impact_sound then
+                                AddSoundVolume(weapon.impact_sound.pack[GetRandomInt(1, #weapon.impact_sound.pack)], GetUnitX(target), GetUnitY(target), weapon.impact_sound.volume or 125, weapon.impact_sound.cutoff or 2000., weapon.impact_sound.distance)
+                            end
+                        end
+
 
                     BlzSetEventDamage(0.)
                 end
 
             end)
+
+        trg = CreateTrigger()
+        TriggerRegisterAnyUnitEventBJ(trg, EVENT_PLAYER_UNIT_SPELL_EFFECT)
+        TriggerAddAction(trg, function()
+            OnSkillCastEnd(GetTriggerUnit(), GetSpellTargetUnit(), GetSpellTargetX(), GetSpellTargetY(), GetSpellAbilityId(), 1)
+        end)
+
+        trg = CreateTrigger()
+        TriggerRegisterAnyUnitEventBJ(trg, EVENT_PLAYER_UNIT_ISSUED_ORDER)
+        TriggerRegisterAnyUnitEventBJ(trg, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
+        TriggerRegisterAnyUnitEventBJ(trg, EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER)
+        TriggerAddAction(trg, function()
+            OnOrderIssued(GetTriggerUnit(), GetIssuedOrderId(), GetOrderPointX(), GetOrderPointY(), GetOrderTargetUnit())
+        end)
 
 
     end
